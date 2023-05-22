@@ -2,93 +2,23 @@ package pipeline_run
 
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/rh01/terraform-provider-tekton/tekton/schema/k8s"
 )
 
-func tektonStepTemplateFields() map[string]*schema.Schema {
+func tektonPipelineTaskRunTemplateFields() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
-		"image": {
-			Type:        schema.TypeString,
-			Description: "Image of the step",
-			Optional:    true,
-		},
-		"command": {
+		"pod_template": {
 			Type:        schema.TypeList,
-			Description: "Command to execute in the container",
+			Description: "PodTemplate is used to specify run specifications for all Task in pipelinerun",
 			Optional:    true,
-			Elem: &schema.Schema{
-				Type: schema.TypeString,
-			},
-		},
-		"args": {
-			Type:        schema.TypeList,
-			Description: "Arguments to the entrypoint",
-			Optional:    true,
-			Elem: &schema.Schema{
-				Type: schema.TypeString,
-			},
-		},
-		"working_dir": {
-			Type:        schema.TypeString,
-			Description: "Working directory to use when executing the step",
-			Optional:    true,
-		},
-		"env": {
-			Type:        schema.TypeList,
-			Description: "Environment variables to set for the step",
-			Optional:    true,
+			MaxItems:    1,
 			Elem: &schema.Resource{
-				Schema: map[string]*schema.Schema{
-					"name": {
-						Type:        schema.TypeString,
-						Description: "Name of the environment variable",
-						Required:    true,
-					},
-					"value": {
-						Type:        schema.TypeString,
-						Description: "Value of the environment variable",
-						Required:    true,
-					},
-				},
+				Schema: k8s.PodTemplateFields("pipelinerun"),
 			},
 		},
-		"volume_mounts": {
-			Type:        schema.TypeList,
-			Description: "Volume mounts for the step",
-			Optional:    true,
-			Elem: &schema.Resource{
-				Schema: map[string]*schema.Schema{
-					"name": {
-						Type:        schema.TypeString,
-						Description: "Name of the volume mount",
-						Required:    true,
-					},
-					"mount_path": {
-						Type:        schema.TypeString,
-						Description: "Path to mount the volume at",
-						Required:    true,
-					},
-					"read_only": {
-						Type:        schema.TypeBool,
-						Description: "Whether the volume should be mounted read-only",
-						Optional:    true,
-					},
-				},
-			},
-		},
-		"image_pull_policy": {
+		"service_account_name": {
 			Type:        schema.TypeString,
-			Description: "Image pull policy for the step",
-			Optional:    true,
-		},
-
-		"script": {
-			Type:        schema.TypeString,
-			Description: "Contents of an executable file to execute",
-			Optional:    true,
-		},
-		"timeout": {
-			Type:        schema.TypeString,
-			Description: "Time after which the step times out",
+			Description: "ServiceAccountName is the name of the ServiceAccount to use to run this PipelineRun's Pods",
 			Optional:    true,
 		},
 	}

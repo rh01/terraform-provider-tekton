@@ -93,3 +93,49 @@ func tektonStepTemplateFields() map[string]*schema.Schema {
 		},
 	}
 }
+
+func expandTektonStepTemplate(d []interface{}) []interface{} {
+	if len(d) == 0 || d[0] == nil {
+		return nil
+	}
+
+	stepTemplate := d[0].(map[string]interface{})
+
+	expanded := make([]interface{}, 1)
+	expanded[0] = map[string]interface{}{
+		"image":             stepTemplate["image"],
+		"command":           stepTemplate["command"],
+		"args":              stepTemplate["args"],
+		"working_dir":       stepTemplate["working_dir"],
+		"env":               stepTemplate["env"],
+		"volume_mounts":     stepTemplate["volume_mounts"],
+		"image_pull_policy": stepTemplate["image_pull_policy"],
+		"script":            stepTemplate["script"],
+		"timeout":           stepTemplate["timeout"],
+	}
+
+	return expanded
+}
+
+func flattenTektonStepTemplate(d []interface{}) []interface{} {
+	if len(d) == 0 || d[0] == nil {
+		return nil
+	}
+
+	stepTemplate := d[0].(map[string]interface{})
+
+	flattened := make([]interface{}, 1)
+	flattened[0] = map[string]interface{}{
+		"image":             stepTemplate["image"],
+		"command":           stepTemplate["command"],
+		"args":              stepTemplate["args"],
+		"working_dir":       stepTemplate["working_dir"],
+		"env":               stepTemplate["env"],
+		"volume_mounts":     stepTemplate["volume_mounts"],
+		"image_pull_policy": stepTemplate["image_pull_policy"],
+		"script":            stepTemplate["script"],
+		"timeout":           stepTemplate["timeout"],
+	}
+
+	return flattened
+}

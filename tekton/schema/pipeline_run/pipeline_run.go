@@ -11,8 +11,11 @@ func TektonPipelineRunFields() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
 		"metadata": k8s.NamespacedMetadataSchema("PipelineRun", false),
 		"spec":     tektonPipelineRunSpecSchema(),
+		"status":   tektonPipelineRunStatusSchema(),
 	}
 }
+
+
 
 func ExpandTektonPipelineRun(tkpps []interface{}) (*tektonapiv1.PipelineRun, error) {
 	result := &tektonapiv1.PipelineRun{}

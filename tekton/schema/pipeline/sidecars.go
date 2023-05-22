@@ -75,3 +75,51 @@ func tektonSidecarFields() map[string]*schema.Schema {
 		},
 	}
 }
+
+func expandTektonSidecar(d []interface{}) []interface{} {
+	if len(d) == 0 || d[0] == nil {
+		return nil
+	}
+	sidecars := make([]interface{}, len(d))
+	for i, sidecar := range d {
+		sidecars[i] = expandTektonSidecarElement(sidecar)
+	}
+	return sidecars
+}
+
+func expandTektonSidecarElement(d interface{}) interface{} {
+	sidecar := d.(map[string]interface{})
+	return map[string]interface{}{
+		"name":         sidecar["name"].(string),
+		"image":        sidecar["image"].(string),
+		"command":      sidecar["command"].([]interface{}),
+		"args":         sidecar["args"].([]interface{}),
+		"working_dir":  sidecar["working_dir"].(string),
+		"env":          sidecar["env"].([]interface{}),
+		"volume_mount": sidecar["volume_mounts"].([]interface{}),
+	}
+}
+
+func flattenTektonSidecar(d []interface{}) []interface{} {
+	if len(d) == 0 || d[0] == nil {
+		return nil
+	}
+	sidecars := make([]interface{}, len(d))
+	for i, sidecar := range d {
+		sidecars[i] = flattenTektonSidecarElement(sidecar)
+	}
+	return sidecars
+}
+
+func flattenTektonSidecarElement(d interface{}) interface{} {
+	sidecar := d.(map[string]interface{})
+	return map[string]interface{}{
+		"name":          sidecar["name"].(string),
+		"image":         sidecar["image"].(string),
+		"command":       sidecar["command"].([]interface{}),
+		"args":          sidecar["args"].([]interface{}),
+		"working_dir":   sidecar["working_dir"].(string),
+		"env":           sidecar["env"].([]interface{}),
+		"volume_mounts": sidecar["volume_mount"].([]interface{}),
+	}
+}

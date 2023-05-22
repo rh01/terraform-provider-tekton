@@ -9,7 +9,7 @@ import (
 	tektonapiv1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 )
 
-func tektonPipelineSpecFields() map[string]*schema.Schema {
+func TektonPipelineSpecFields() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
 		"params": {
 			Type:        schema.TypeList,
@@ -43,7 +43,7 @@ func tektonPipelineSpecFields() map[string]*schema.Schema {
 			Description: "Workspaces are the volumes that this Pipeline requires.",
 			Optional:    true,
 			Elem: &schema.Resource{
-				Schema: tektonWorkspaceDeclarationFields(),
+				Schema: tektonPipelineWorkspaceDeclarationFields(),
 			},
 		},
 		"results": {
@@ -89,7 +89,7 @@ func tektonPipelineResultFields() map[string]*schema.Schema {
 }
 
 func tektonPipelineSpecSchema() *schema.Schema {
-	fields := tektonPipelineSpecFields()
+	fields := TektonPipelineSpecFields()
 
 	return &schema.Schema{
 		Type:        schema.TypeList,
