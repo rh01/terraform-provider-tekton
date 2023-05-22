@@ -20,7 +20,6 @@ require (
 	github.com/sirupsen/logrus v1.9.0
 	github.com/stretchr/testify v1.8.2
 	github.com/tektoncd/pipeline v0.47.0
-	gotest.tools v2.2.0+incompatible
 	k8s.io/api v0.26.2
 	k8s.io/apimachinery v0.26.4
 	k8s.io/client-go v12.0.0+incompatible

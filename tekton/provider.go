@@ -103,7 +103,9 @@ func Provider() *schema.Provider {
 				Description: "Load local kubeconfig.",
 			},
 		},
-		ResourcesMap: map[string]*schema.Resource{},
+		ResourcesMap: map[string]*schema.Resource{
+			"tekton_task": resourceTektonTask(),
+		},
 	}
 	p.ConfigureContextFunc = func(ctx context.Context, resourceData *schema.ResourceData) (interface{}, diag.Diagnostics) {
 		terraformVersion := p.TerraformVersion
@@ -205,7 +207,7 @@ func tryLoadingConfigFile(resourceData *schema.ResourceData) (*restclient.Config
 			log.Printf("[INFO] Unable to load config file as it doesn't exist at %q", path)
 			return nil, nil
 		}
-		return nil, fmt.Errorf("Failed to load config (%s%s): %s", path, ctxSuffix, err)
+		return nil, fmt.Errorf("[DEBUG] Failed to load config (%s%s): %s", path, ctxSuffix, err)
 	}
 
 	log.Printf("[INFO] Successfully loaded config file (%s%s)", path, ctxSuffix)

@@ -112,7 +112,7 @@ func resourceTektonTaskUpdate(resourceData *schema.ResourceData, meta interface{
 	ops := task.AppendPatchOps("", "", resourceData, make([]patch.PatchOperation, 0, 0))
 	data, err := ops.MarshalJSON()
 	if err != nil {
-		return fmt.Errorf("Failed to marshal update operations: %s", err)
+		return fmt.Errorf("[DEBUG] Failed to marshal update operations: %s", err)
 	}
 
 	log.Printf("[INFO] Updating tekton task: %s", ops)
