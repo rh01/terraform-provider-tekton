@@ -104,7 +104,10 @@ func Provider() *schema.Provider {
 			},
 		},
 		ResourcesMap: map[string]*schema.Resource{
-			"tekton_task": resourceTektonTask(),
+			"tekton_task":         resourceTektonTask(),
+			"tekton_task_run":     resourceTektonTaskRun(),
+			"tekton_pipeline":     resourceTektonPipeline(),
+			"tekton_pipeline_run": resourceTektonPipelineRun(),
 		},
 	}
 	p.ConfigureContextFunc = func(ctx context.Context, resourceData *schema.ResourceData) (interface{}, diag.Diagnostics) {

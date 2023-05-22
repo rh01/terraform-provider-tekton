@@ -1,4 +1,4 @@
-package task
+package pipeline_run
 
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -7,27 +7,27 @@ import (
 	tektonapiv1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 )
 
-func TektonTaskFields() map[string]*schema.Schema {
+func TektonPipelineRunFields() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
-		"metadata": k8s.NamespacedMetadataSchema("Task", false),
-		"spec":     tektonTaskSpecSchema(),
+		"metadata": k8s.NamespacedMetadataSchema("PipelineRun", false),
+		"spec":     tektonPipelineRunSpecSchema(),
 	}
 }
 
-func ExpandTektonTask(tasks []interface{}) (*tektonapiv1.Task, error) {
-	result := &tektonapiv1.Task{}
+func ExpandTektonPipelineRun(tkpps []interface{}) (*tektonapiv1.PipelineRun, error) {
+	result := &tektonapiv1.PipelineRun{}
 
-	if len(tasks) == 0 || tasks[0] == nil {
+	if len(tkpps) == 0 || tkpps[0] == nil {
 		return result, nil
 	}
 
-	in := tasks[0].(map[string]interface{})
+	in := tkpps[0].(map[string]interface{})
 
 	if v, ok := in["metadata"].([]interface{}); ok {
 		result.ObjectMeta = k8s.ExpandMetadata(v)
 	}
 	if v, ok := in["spec"].([]interface{}); ok {
-		spec, err := expandTektonTaskSpec(v)
+		spec, err := expandTektonPipelineRunSpec(v)
 		if err != nil {
 			return result, err
 		}
@@ -37,20 +37,20 @@ func ExpandTektonTask(tasks []interface{}) (*tektonapiv1.Task, error) {
 	return result, nil
 }
 
-func FlattenTektonTask(in tektonapiv1.Task) []interface{} {
+func FlattenTektonPipelineRun(in tektonapiv1.PipelineRun) []interface{} {
 	att := make(map[string]interface{})
 
 	att["metadata"] = k8s.FlattenMetadata(in.ObjectMeta)
-	att["spec"] = flattenTektonTaskSpec(in.Spec)
+	att["spec"] = flattenTektonPipelineRunSpec(in.Spec)
 
 	return []interface{}{att}
 }
 
-func FromResourceData(resourceData *schema.ResourceData) (*tektonapiv1.Task, error) {
-	result := &tektonapiv1.Task{}
+func FromResourceData(resourceData *schema.ResourceData) (*tektonapiv1.PipelineRun, error) {
+	result := &tektonapiv1.PipelineRun{}
 
 	result.ObjectMeta = k8s.ExpandMetadata(resourceData.Get("metadata").([]interface{}))
-	spec, err := expandTektonTaskSpec(resourceData.Get("spec").([]interface{}))
+	spec, err := expandTektonPipelineRunSpec(resourceData.Get("spec").([]interface{}))
 	if err != nil {
 		return result, err
 	}
@@ -59,11 +59,11 @@ func FromResourceData(resourceData *schema.ResourceData) (*tektonapiv1.Task, err
 	return result, nil
 }
 
-func ToResourceData(vm tektonapiv1.Task, resourceData *schema.ResourceData) error {
+func ToResourceData(vm tektonapiv1.PipelineRun, resourceData *schema.ResourceData) error {
 	if err := resourceData.Set("metadata", k8s.FlattenMetadata(vm.ObjectMeta)); err != nil {
 		return err
 	}
-	if err := resourceData.Set("spec", flattenTektonTaskSpec(vm.Spec)); err != nil {
+	if err := resourceData.Set("spec", flattenTektonPipelineRunSpec(vm.Spec)); err != nil {
 		return err
 	}
 
