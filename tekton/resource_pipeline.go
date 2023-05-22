@@ -42,17 +42,17 @@ func resourceTektonPipelineCreate(resourceData *schema.ResourceData, meta interf
 		return err
 	}
 
-	log.Printf("[INFO] Creating new tekton task: %#v", dv)
+	log.Printf("[INFO] Creating new tekton pipeline: %#v", dv)
 	if err := cli.CreateTask(dv); err != nil {
 		return err
 	}
-	log.Printf("[INFO] Submitted new tekton task: %#v", dv)
+	log.Printf("[INFO] Submitted new tekton pipeline: %#v", dv)
 	if err := task.ToResourceData(*dv, resourceData); err != nil {
 		return err
 	}
 	resourceData.SetId(utils.BuildId(dv.ObjectMeta))
 
-	// Wait for tekton task instance's status phase to be succeeded:
+	// Wait for tekton pipeline instance's status phase to be succeeded:
 	name := dv.ObjectMeta.Name
 	namespace := dv.ObjectMeta.Namespace
 
@@ -65,13 +65,13 @@ func resourceTektonPipelineCreate(resourceData *schema.ResourceData, meta interf
 			dv, err = cli.GetTask(namespace, name)
 			if err != nil {
 				if errors.IsNotFound(err) {
-					log.Printf("[DEBUG] tekton task %s is not created yet", name)
+					log.Printf("[DEBUG] tekton pipeline %s is not created yet", name)
 					return dv, "Creating", nil
 				}
 				return dv, "", err
 			}
 
-			log.Printf("[DEBUG] tekton task %s is being created", name)
+			log.Printf("[DEBUG] tekton pipeline %s is being created", name)
 			return dv, "Creating", nil
 		},
 	}
@@ -90,14 +90,14 @@ func resourceTektonPipelineRead(resourceData *schema.ResourceData, meta interfac
 		return err
 	}
 
-	log.Printf("[INFO] Reading tekton task %s", name)
+	log.Printf("[INFO] Reading tekton pipeline %s", name)
 
 	dv, err := cli.GetTask(namespace, name)
 	if err != nil {
 		log.Printf("[DEBUG] Received error: %#v", err)
 		return err
 	}
-	log.Printf("[INFO] Received tekton task: %#v", dv)
+	log.Printf("[INFO] Received tekton pipeline: %#v", dv)
 
 	return task.ToResourceData(*dv, resourceData)
 }
@@ -116,13 +116,13 @@ func resourceTektonPipelineUpdate(resourceData *schema.ResourceData, meta interf
 		return fmt.Errorf("[DEBUG] Failed to marshal update operations: %s", err)
 	}
 
-	log.Printf("[INFO] Updating tekton task: %s", ops)
+	log.Printf("[INFO] Updating tekton pipeline: %s", ops)
 	out := &tektonapiv1.Task{}
 	if err := cli.UpdateTask(namespace, name, out, data); err != nil {
 		return err
 	}
 
-	log.Printf("[INFO] Submitted updated tekton task: %#v", out)
+	log.Printf("[INFO] Submitted updated tekton pipeline: %#v", out)
 
 	return resourceTektonPipelineRead(resourceData, meta)
 }
@@ -135,12 +135,12 @@ func resourceTektonPipelineDelete(resourceData *schema.ResourceData, meta interf
 		return err
 	}
 
-	log.Printf("[INFO] Deleting tekton task: %#v", name)
+	log.Printf("[INFO] Deleting tekton pipeline: %#v", name)
 	if err := cli.DeleteTask(namespace, name); err != nil {
 		return err
 	}
 
-	// Wait for tekton task instance to be removed:
+	// Wait for tekton pipeline instance to be removed:
 	stateConf := &resource.StateChangeConf{
 		Pending: []string{"Deleting"},
 		Timeout: resourceData.Timeout(schema.TimeoutDelete),
@@ -153,7 +153,7 @@ func resourceTektonPipelineDelete(resourceData *schema.ResourceData, meta interf
 				return dv, "", err
 			}
 
-			log.Printf("[DEBUG] tekton task %s is being deleted", dv.GetName())
+			log.Printf("[DEBUG] tekton pipeline %s is being deleted", dv.GetName())
 			return dv, "Deleting", nil
 		},
 	}
@@ -162,7 +162,7 @@ func resourceTektonPipelineDelete(resourceData *schema.ResourceData, meta interf
 		return fmt.Errorf("%s", err)
 	}
 
-	log.Printf("[INFO] tekton task %s deleted", name)
+	log.Printf("[INFO] tekton pipeline %s deleted", name)
 
 	resourceData.SetId("")
 	return nil
@@ -176,7 +176,7 @@ func resourceTektonPipelineExists(resourceData *schema.ResourceData, meta interf
 		return false, err
 	}
 
-	log.Printf("[INFO] Checking tekton task %s", name)
+	log.Printf("[INFO] Checking tekton pipeline %s", name)
 	if _, err := cli.GetTask(namespace, name); err != nil {
 		if statusErr, ok := err.(*errors.StatusError); ok && statusErr.ErrStatus.Code == 404 {
 			return false, nil
