@@ -5,6 +5,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+	"github.com/rh01/terraform-provider-tekton/tekton/schema/task"
 	tektonapiv1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 )
 
@@ -14,7 +15,7 @@ func tektonPipelineSpecFields() map[string]*schema.Schema {
 			Type:        schema.TypeList,
 			Description: "Params is a list of input parameters required to run the task. Params must be supplied as inputs in PipelineRuns unless they declare a default value.",
 			Optional:    true,
-			// MaxItems:    1,
+			MaxItems:    1,
 			Elem: &schema.Resource{
 				Schema: tektonParamSpecFields(),
 			},
@@ -29,37 +30,12 @@ func tektonPipelineSpecFields() map[string]*schema.Schema {
 			Description: "Description is a user-facing description of the task that may be used to populate a UI.",
 			Optional:    true,
 		},
-		"steps": {
+		"tasks": {
 			Type:        schema.TypeList,
-			Description: "Steps are the steps of the build; each step is run sequentially with the source mounted into /workspace.",
+			Description: "Tasks are the tasks of the build; each task is run sequentially with the source mounted into /workspace.",
 			Optional:    true,
 			Elem: &schema.Resource{
-				Schema: tektonStepFields(),
-			},
-		},
-		// "volumes": {
-		// 	Type:        schema.TypeList,
-		// 	Description: "Volumes is a collection of volumes that are available to mount into the steps of the build.",
-		// 	Optional:    true,
-		// 	Elem: &schema.Resource{
-		// 		Schema: tektonVolumeFields(),
-		// 	},
-		// },
-		"step_template": {
-			Type:        schema.TypeList,
-			Description: "StepTemplate can be used as the basis for all step containers within the Pipeline, so that the steps inherit settings on the base container.",
-			Optional:    true,
-			MaxItems:    1,
-			Elem: &schema.Resource{
-				Schema: tektonStepTemplateFields(),
-			},
-		},
-		"sidecars": {
-			Type:        schema.TypeList,
-			Description: "Sidecars are run alongside the Pipeline's step containers. They begin before the steps start and end after the steps complete.",
-			Optional:    true,
-			Elem: &schema.Resource{
-				Schema: tektonSidecarFields(),
+				Schema: task.TektonTaskFields(),
 			},
 		},
 		"workspaces": {
@@ -70,14 +46,45 @@ func tektonPipelineSpecFields() map[string]*schema.Schema {
 				Schema: tektonWorkspaceDeclarationFields(),
 			},
 		},
-		// "results": {
-		// 	Type:        schema.TypeList,
-		// 	Description: "Results are values that this Pipeline can output",
-		// 	Optional:    true,
-		// 	Elem: &schema.Resource{
-		// 		Schema: tektonPipelineResultFields(),
-		// 	},
-		// },
+		"results": {
+			Type:        schema.TypeList,
+			Description: "Results are values that this Pipeline can output",
+			Optional:    true,
+			Elem: &schema.Resource{
+				Schema: tektonPipelineResultFields(),
+			},
+		},
+	}
+}
+
+func tektonPipelineResultFields() map[string]*schema.Schema {
+	return map[string]*schema.Schema{
+		"name": {
+			Type:        schema.TypeString,
+			Description: "Name declares the name by which a result is referenced.",
+			Required:    true,
+		},
+		"type": {
+			Type: schema.TypeString,
+
+			Description:  "Type is the user-specified type of the result. The possible types are currently string, array and object, and string is the default.",
+			Optional:     true,
+			ValidateFunc: validation.StringInSlice([]string{"string", "array", "object"}, false),
+		},
+		"description": {
+			Type:        schema.TypeString,
+			Description: "Description is a user-facing description of the result that may be used to populate a UI.",
+			Optional:    true,
+		},
+		"value": {
+			Type:        schema.TypeList,
+			Description: "Value is the expression used to retrieve the value.",
+			Optional:    true,
+			MaxItems:    1,
+			Elem: &schema.Resource{
+				Schema: tektonParamValueFields(),
+			},
+		},
 	}
 }
 
@@ -178,19 +185,167 @@ func tektonParamValueFields() map[string]*schema.Schema {
 }
 
 func expandTektonPipelineSpec(task []interface{}) (tektonapiv1.PipelineSpec, error) {
-	result := tektonapiv1.PipelineSpec{}
+	ppSpec := tektonapiv1.PipelineSpec{}
 
 	if len(task) == 0 || task[0] == nil {
-		return result, nil
+		return ppSpec, nil
 	}
 
-	_ = task[0].(map[string]interface{})
+	tktask := task[0].(map[string]interface{})
 
-	return result, nil
+	// display_name is a user-facing name of the pipeline
+	if v, ok := tktask["display_name"]; ok {
+		ppSpec.DisplayName = v.(string)
+	}
+
+	// description is a user-facing description of the pipeline
+	if v, ok := tktask["description"]; ok {
+		ppSpec.Description = v.(string)
+	}
+
+	// params
+	if v, ok := tktask["params"]; ok {
+		params := v.([]interface{})
+		for _, param := range params {
+			p := param.(map[string]interface{})
+			ppSpec.Params = append(ppSpec.Params, tektonapiv1.ParamSpec{
+				Name:        p["name"].(string),
+				Type:        tektonapiv1.ParamType(p["type"].(string)),
+				Description: p["description"].(string),
+				Default:     expandTektonParamValue(p["default"].([]interface{})),
+			})
+		}
+	}
+
+	//results
+	if v, ok := tktask["results"]; ok {
+		results := v.([]interface{})
+		for _, res := range results {
+			r := res.(map[string]interface{})
+			ppSpec.Results = append(ppSpec.Results, tektonapiv1.PipelineResult{
+				Name:        r["name"].(string),
+				Type:        tektonapiv1.ResultsType(r["type"].(string)),
+				Description: r["description"].(string),
+				Value:       tektonapiv1.ResultValue(*expandTektonParamValue(r["value"].([]interface{}))),
+			})
+		}
+	}
+
+	// workspaces
+	if v, ok := tktask["workspaces"]; ok {
+		workspaces := v.([]interface{})
+		for _, ws := range workspaces {
+			w := ws.(map[string]interface{})
+			ppSpec.Workspaces = append(ppSpec.Workspaces, tektonapiv1.PipelineWorkspaceDeclaration{
+				Name:        w["name"].(string),
+				Description: w["description"].(string),
+				Optional:    w["optional"].(bool),
+			})
+		}
+	}
+
+	return ppSpec, nil
+}
+
+func expandTektonParamValue(value []interface{}) *tektonapiv1.ParamValue {
+	if len(value) == 0 || value[0] == nil {
+		return nil
+	}
+
+	v := value[0].(map[string]interface{})
+
+	return &tektonapiv1.ParamValue{
+		Type:      tektonapiv1.ParamType(v["type"].(string)),
+		StringVal: v["string_val"].(string),
+		ArrayVal:  expandTektonArrayValue(v["array_val"].([]interface{})),
+	}
+}
+
+func expandTektonArrayValue(value []interface{}) []string {
+	var result []string
+
+	for _, v := range value {
+		result = append(result, v.(string))
+	}
+
+	return result
 }
 
 func flattenTektonPipelineSpec(in tektonapiv1.PipelineSpec) []interface{} {
 	att := make(map[string]interface{})
+	att["display_name"] = in.DisplayName
+	att["description"] = in.Description
+	att["params"] = flattenTektonParamSpec(in.Params)
+	att["results"] = flattenTektonPipelineResult(in.Results)
+	att["workspaces"] = flattenTektonPipelineWorkspaceDeclaration(in.Workspaces)
 
 	return []interface{}{att}
+}
+
+func flattenTektonParamSpec(in []tektonapiv1.ParamSpec) []interface{} {
+
+	var result []interface{}
+
+	for _, v := range in {
+		att := make(map[string]interface{})
+		att["name"] = v.Name
+		att["type"] = v.Type
+		att["description"] = v.Description
+		att["default"] = flattenTektonParamValue(v.Default)
+
+		result = append(result, att)
+	}
+
+	return result
+}
+
+func flattenTektonPipelineResult(in []tektonapiv1.PipelineResult) []interface{} {
+
+	var result []interface{}
+
+	for _, v := range in {
+		att := make(map[string]interface{})
+		att["name"] = v.Name
+		att["type"] = v.Type
+		att["description"] = v.Description
+		att["value"] = flattenTektonParamValue(&v.Value)
+
+		result = append(result, att)
+	}
+
+	return result
+}
+
+func flattenTektonPipelineWorkspaceDeclaration(in []tektonapiv1.PipelineWorkspaceDeclaration) []interface{} {
+
+	var result []interface{}
+
+	for _, v := range in {
+		att := make(map[string]interface{})
+		att["name"] = v.Name
+		att["description"] = v.Description
+		att["optional"] = v.Optional
+
+		result = append(result, att)
+	}
+
+	return result
+}
+
+func flattenTektonParamValue(in *tektonapiv1.ParamValue) []interface{} {
+
+	var result []interface{}
+
+	if in == nil {
+		return result
+	}
+
+	att := make(map[string]interface{})
+	att["type"] = in.Type
+	att["string_val"] = in.StringVal
+	att["array_val"] = in.ArrayVal
+
+	result = append(result, att)
+
+	return result
 }
