@@ -1,0 +1,84 @@
+#!/bin/bash
+
+set -e
+
+export TEKTON_PROVIDER=k8s-1.23
+export KUBEVIRTCI_TAG=${KUBEVIRTCI_TAG:-2205231118-f12b50e}
+export TEKTON_DEPLOY_PROMETHEUS=false
+export TEKTON_NUM_NODES=${TEKTON_NUM_NODES:-1}
+export TEKTON_MEMORY_SIZE=${TEKTON_MEMORY_SIZE:-15360M}
+export TEKTON_DEPLOY_CDI="true"
+
+_kubectl=cluster-up/cluster-up/kubectl.sh
+
+_action=$1
+shift
+
+
+
+function tektonci::usage() {
+	echo "Usage:
+
+	./tektonci <cammand>
+
+	Commands:
+
+	  up                                Start a cluster with tekton
+	  down                              Destroy the cluster
+	  kubeconfig                        Return the kubeconfig of the cluster
+	  kubectl <kubectl options>         Interact with the cluster
+
+	  help                              Print usage
+	"
+}
+
+function tektonci::kubeconfig() {
+	cluster-up/cluster-up/kubeconfig.sh
+}
+
+function tektonci::fetch_tektonci() {
+	[[ -d cluster-up ]] || git clone https://github.com/tekton/tektonci.git cluster-up
+	(cd cluster-up && git checkout main > /dev/null 2>&1 && git pull > /dev/null && git checkout ${KUBEVIRTCI_TAG} > /dev/null 2>&1)
+}
+
+function tektonci::up() {
+	make cluster-up -C cluster-up
+	export KUBECONFIG=$(cluster-up/cluster-up/kubeconfig.sh)
+	echo "installing tekton..."
+	LATEST=$(curl -L https://storage.googleapis.com/tekton-prow/devel/release/tekton/tekton/stable.txt)
+	${_kubectl} apply -f https://github.com/tekton/tekton/releases/download/${LATEST}/tekton-operator.yaml
+	${_kubectl} apply -f https://github.com/tekton/tekton/releases/download/${LATEST}/tekton-cr.yaml
+	echo "waiting for tekton to become ready, this can take a few minutes. You can safely abort this step, the cluster is ready ..."
+	${_kubectl} -n tekton wait kv tekton --for condition=Available --timeout=5m
+}
+
+function tektonci::down() {
+	make cluster-down -C cluster-up
+}
+
+
+tektonci::fetch_tektonci
+
+case ${_action} in
+"up")
+	tektonci::up
+	;;
+"down")
+	tektonci::down
+	;;
+"kubeconfig")
+	tektonci::kubeconfig
+	;;
+"kubectl")
+	${_kubectl} "$@"
+	;;
+"help")
+	tektonci::usage
+	;;
+*)
+	echo "Error: Unknown tektonci command"
+	echo ""
+	tektonci::usage
+	exit 1
+	;;
+esac

@@ -1,0 +1,7 @@
+terraform-provider-kubevirt
+*swp
+_examples/**/.terraform
+_ci-configs
+build/_output
+cluster-up
+.vscode/
