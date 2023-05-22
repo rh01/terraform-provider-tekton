@@ -33,17 +33,17 @@ In order to use it in your computer, run install command inside the repository:
 $ make install
 ```
 
-You can find examples how to use the provider in [_example directory](https://github.com/nirarg/terraform-provider-kubevirt/tree/master/_examples)
+You can find examples how to use the provider in [_example directory](https://github.com/rh01/terraform-provider-tekton/tree/master/_examples)
 
 ## Contributing to the Provider
 
 ### Code structure
 
-* All code located under [kubevirt directory](https://github.com/nirarg/terraform-provider-kubevirt/tree/master/kubevirt)
-* Backend kubevirt client wrapper located in [client](https://github.com/nirarg/terraform-provider-kubevirt/tree/master/kubevirt/client/client.go)
-* All terraform schema definitions located under [schema directory](https://github.com/nirarg/terraform-provider-kubevirt/tree/master/kubevirt/schema)
-* Terraform resource is defined (operations and schema) in `kubevirt/resource_*.go` for example: virtualmachine resource defined [here](https://github.com/nirarg/terraform-provider-kubevirt/tree/master/kubevirt/resource_virtualmachine.go)
-* The main file, which define the provider's flags and structures is [provider](https://github.com/nirarg/terraform-provider-kubevirt/tree/master/kubevirt/provider.go)
+* All code located under [tekton directory](https://github.com/nirarg/terraform-provider-tekton/tree/master/tekton)
+* Backend tekton client wrapper located in [client](https://github.com/nirarg/terraform-provider-tekton/tree/master/tekton/client/client.go)
+* All terraform schema definitions located under [schema directory](https://github.com/nirarg/terraform-provider-tekton/tree/master/tekton/schema)
+* Terraform resource is defined (operations and schema) in `tekton/resource_*.go` for example: virtualmachine resource defined [here](https://github.com/rh01/terraform-provider-tekton/tree/master/tekton/resource_task.go)
+* The main file, which define the provider's flags and structures is [provider](https://github.com/nirarg/terraform-provider-tekton/tree/master/tekton/provider.go)
 
 ### Development Environment
 
@@ -61,7 +61,7 @@ In order to test the provider, you can simply run `make test`.
 $ make test
 ```
 
-In order to run terraform on your computer with `terraform-provider-kubevirt`, run `make install`
+In order to run terraform on your computer with `terraform-provider-tekton`, run `make install`
 
 ```sh
 $ make install
